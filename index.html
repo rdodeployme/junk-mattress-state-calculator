@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JUNK — Mattress Recycling State Setup Calculator</title>
+<style>
+  :root{
+    --green:#00ED00;
+    --black:#050505;
+    --grey:#111111;
+    --line:#232323;
+    --line2:#2e2e2e;
+    --text:#FFFFFF;
+    --muted:#b5b5b5;
+    --red:#ff4d4d;
+    --amber:#ffd166;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--black);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  .wrap{max-width:1280px;margin:0 auto;padding:0 20px 90px}
+  .wrap.wide{max-width:1680px}
+
+  header{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0b0b0b,var(--black));
+    position:sticky;top:0;z-index:50;
+  }
+  .hd{max-width:1680px;margin:0 auto;padding:14px 20px 0;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .logo{
+    font-weight:900;font-size:26px;letter-spacing:-1px;
+    background:var(--green);color:var(--black);padding:2px 10px;border-radius:4px;
+  }
+  .hd h1{font-size:15px;font-weight:600;margin:0;color:var(--muted);letter-spacing:.2px}
+  .hd .spacer{flex:1}
+  .statepick{display:flex;align-items:center;gap:8px}
+  .statepick label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+  .tabs{max-width:1680px;margin:0 auto;padding:10px 20px 0;display:flex;gap:4px}
+  .tab{
+    background:transparent;border:0;border-bottom:3px solid transparent;
+    color:var(--muted);font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    padding:10px 16px;cursor:pointer;
+  }
+  .tab.on{color:var(--green);border-bottom-color:var(--green)}
+  .tab .count{background:var(--line2);color:var(--text);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px}
+  .tab.on .count{background:var(--green);color:var(--black)}
+
+  .grid{display:grid;grid-template-columns:1fr 400px;gap:28px;margin-top:24px;align-items:start}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+
+  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar .hint{font-size:13px;color:var(--muted);margin-left:auto}
+
+  .card{background:var(--grey);border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden}
+  .card > h2{
+    margin:0;padding:13px 16px;
+    font-size:13px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;
+  }
+  .card > h2 .num{
+    color:var(--green);font-size:11px;border:1px solid var(--green);
+    width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex:0 0 auto;
+  }
+  .card > h2 .sub{
+    margin-left:auto;font-size:12px;font-weight:800;letter-spacing:0;text-transform:none;
+    color:var(--green);background:rgba(0,237,0,.09);border:1px solid rgba(0,237,0,.25);
+    border-radius:5px;padding:3px 9px;font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .card > h2 .chev{color:var(--muted);font-size:11px;transition:transform .15s;margin-left:8px}
+  .card.collapsed .body,.card.collapsed .stack,.card.collapsed table{display:none}
+  .card.collapsed h2 .chev{transform:rotate(-90deg)}
+  .body{padding:4px 16px 14px}
+  .lead{
+    font-size:13.5px;line-height:1.5;color:var(--muted);padding:11px 0 9px;
+    border-bottom:1px solid var(--line);margin-bottom:2px;max-width:64ch;
+  }
+  .lead b{color:#e2e2e2}
+
+  .row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .lbl{flex:1;font-size:14.5px}
+  .row .lbl small{display:block;color:var(--muted);font-size:13px;line-height:1.45;margin-top:3px;max-width:60ch}
+  .row.sub{padding-left:14px;border-left:2px solid var(--line2);margin-left:2px}
+  .grouphd{
+    font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);
+    padding:14px 0 6px;border-bottom:1px solid var(--line2);margin-bottom:2px;display:flex;align-items:center;gap:8px;
+  }
+  .grouphd .tot{margin-left:auto;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none;font-size:12.5px}
+
+  .inp{display:flex;align-items:center;background:#000;border:1px solid var(--line2);border-radius:6px;overflow:hidden;flex:0 0 auto}
+  .inp span{color:var(--muted);font-size:12px;padding:0 8px}
+  .inp span.pre{border-right:1px solid var(--line2)}
+  .inp span.suf{border-left:1px solid var(--line2)}
+  input[type=number],input[type=text]{
+    background:transparent;border:0;color:var(--text);
+    font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;
+    padding:8px 6px;width:92px;text-align:right;outline:none;
+  }
+  input[type=text]{text-align:left;width:180px}
+  .inp:focus-within{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,237,0,.15)}
+  input[type=number]:disabled{color:var(--muted)}
+  select{background:#000;color:var(--text);border:1px solid var(--line2);border-radius:6px;padding:8px 10px;font-size:13px;font-weight:600;outline:none}
+  select:focus{border-color:var(--green)}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--line2);border-radius:3px;outline:none;margin:10px 0 2px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--green);cursor:pointer;border:3px solid var(--black)}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--green);cursor:pointer;border:3px solid var(--black)}
+  .rangewrap{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+
+  .derived{color:var(--green);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+    background:rgba(0,237,0,.08);border:1px solid rgba(0,237,0,.25);border-radius:6px;padding:7px 10px;white-space:nowrap}
+  .derived.warn{color:var(--amber);background:rgba(255,209,102,.09);border-color:rgba(255,209,102,.35)}
+  .derived.bad{color:var(--red);background:rgba(255,77,77,.09);border-color:rgba(255,77,77,.35)}
+  .flag{color:var(--amber)}
+  .alert{
+    background:rgba(255,77,77,.09);border:1px solid rgba(255,77,77,.35);border-radius:6px;
+    padding:10px 13px;font-size:13.5px;line-height:1.45;color:#ffc9c9;margin:10px 0 2px;display:none;
+  }
+
+  /* Team roster */
+  .roster{padding:6px 18px 16px}
+  .rhead{display:flex;align-items:baseline;gap:8px;padding:8px 0 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .rhead .big{font-size:30px;font-weight:900;letter-spacing:-1px;color:var(--green);line-height:1}
+  .rhead .lbl{font-size:13px;color:var(--muted)}
+  .person{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .person:last-child{border-bottom:none}
+  .person .who{width:112px;flex:0 0 auto;font-size:13.5px;font-weight:700}
+  .person .who em{display:block;font-style:normal;font-size:11.5px;color:var(--green);font-weight:700;letter-spacing:.3px}
+  .person .who em.solo{color:var(--muted)}
+  .pbar{flex:1;height:16px;display:flex;background:#000;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  .pbar span{display:block;height:100%}
+  .pbar .tk{background:var(--green)}
+  .pbar .yd{background:#ffffff}
+  .pbar .id{background:#2a2a2a}
+  .person .hrs{width:126px;flex:0 0 auto;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rlegend{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin-top:12px;flex-wrap:wrap}
+  .rlegend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  .rmore{font-size:12.5px;color:var(--muted);padding:8px 0 0}
+
+  .toggle{display:flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;flex:0 0 auto}
+  .toggle button{background:#000;color:var(--muted);border:0;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .toggle button.on{background:var(--green);color:var(--black)}
+
+  .results{position:sticky;top:118px}
+  .verdict{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--grey);margin-bottom:14px}
+  .verdict .top{padding:18px;border-bottom:1px solid var(--line)}
+  .vlabel{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .vbig{font-size:40px;font-weight:900;letter-spacing:-1.5px;font-variant-numeric:tabular-nums;line-height:1}
+  .vbig.good{color:var(--green)}
+  .vbig.bad{color:var(--red)}
+  .vsub{font-size:13px;color:var(--muted);margin-top:6px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr}
+  .kpi{padding:13px 18px;border-top:1px solid var(--line);border-right:1px solid var(--line)}
+  .kpi:nth-child(2n){border-right:none}
+  .kpi .k{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-.5px}
+  .kpi .v.good{color:var(--green)}
+  .kpi .v.bad{color:var(--red)}
+
+  .savebar{background:var(--grey);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+  .savebar .t{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .savebar .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .savebar .inp{flex:1;min-width:150px}
+  .savebar .inp input{width:100%}
+  .saved-msg{font-size:12px;color:var(--green);margin-top:8px;display:none}
+
+  .stack{padding:4px 18px 16px}
+  .bar{margin:11px 0}
+  .bar .t{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+  .bar .t b{font-variant-numeric:tabular-nums}
+  .track{height:8px;background:#000;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+  .fill{height:100%;background:var(--green);border-radius:3px;transition:width .25s}
+  .fill.rev{background:#ffffff}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 18px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700}
+  td b{font-variant-numeric:tabular-nums}
+  tr.total td{background:rgba(0,237,0,.06);font-weight:800;border-top:1px solid var(--line2)}
+  tr.grp td{background:#0b0b0b;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:800}
+
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .btn{background:var(--green);color:var(--black);border:0;border-radius:6px;padding:11px 16px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line2)}
+  .btn.sm{padding:6px 10px;font-size:11.5px}
+  .btn:hover{opacity:.9}
+
+  svg text{font-size:10px;fill:var(--muted)}
+  .caveat{background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.3);border-radius:8px;padding:15px 17px;font-size:13.5px;line-height:1.55;color:#ece5d4;margin-top:16px}
+  .caveat b{color:var(--amber)}
+  .caveat ul{margin:8px 0 0;padding-left:18px}
+  .caveat li{margin:4px 0}
+
+  .cmp-empty{border:1px dashed var(--line2);border-radius:10px;padding:60px 30px;text-align:center;color:var(--muted);margin-top:28px}
+  .cmp-empty b{display:block;color:var(--text);font-size:18px;margin-bottom:8px}
+  .cmp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.cmp{min-width:640px;font-size:13px}
+  table.cmp th,table.cmp td{padding:9px 14px;white-space:nowrap}
+  table.cmp th:first-child,table.cmp td:first-child{position:sticky;left:0;background:var(--grey);z-index:2;min-width:230px;border-right:1px solid var(--line2)}
+  table.cmp thead th{background:var(--grey);position:sticky;top:0;z-index:3}
+  table.cmp thead th:first-child{z-index:4}
+  table.cmp td.best{background:rgba(0,237,0,.13);color:var(--green);font-weight:800}
+  table.cmp td.worst{color:var(--red)}
+  table.cmp tr.sec td{background:#0b0b0b;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:800;padding-top:12px}
+  .cmp-head{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .cmp-head .nm{font-size:14px;font-weight:800;color:var(--text);letter-spacing:0;text-transform:none}
+  .cmp-head .acts{display:flex;gap:5px}
+  .cmp-charts{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.cmp-charts{grid-template-columns:1fr}}
+  .cbar{margin:14px 0}
+  .cbar .t{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+  .cbar .t b{font-variant-numeric:tabular-nums}
+  .ctrack{height:22px;background:#000;border:1px solid var(--line);border-radius:5px;position:relative;overflow:hidden}
+  .czero{position:absolute;top:0;bottom:0;width:1px;background:#444}
+  .cfill{position:absolute;top:0;bottom:0;background:var(--green)}
+  .cfill.neg{background:var(--red)}
+  .legend{display:flex;gap:16px;font-size:12.5px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+  @media print{
+    header{position:static}.results{position:static}
+    body{background:#fff;color:#000}
+    .card,.verdict{background:#fff;border-color:#ccc}
+    .tabs,.toolbar,.btns,.savebar{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <div class="logo">JUNK</div>
+    <h1>MATTRESS RECYCLING — NEW STATE SETUP CALCULATOR</h1>
+    <div class="spacer"></div>
+    <div class="statepick">
+      <label for="stateName">State</label>
+      <select id="stateName">
+        <option>NSW</option><option>QLD</option><option selected>VIC</option>
+        <option>SA</option><option>WA</option><option>TAS</option><option>ACT</option><option>NT</option>
+      </select>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="tabBtnModel">Model</button>
+    <button class="tab" id="tabBtnCompare">Compare <span class="count" id="cmpCount">0</span></button>
+  </div>
+</header>
+
+<!-- ==================== MODEL ==================== -->
+<div class="wrap" id="viewModel">
+<div class="grid">
+
+  <div class="inputs">
+
+    <div class="toolbar">
+      <button class="btn ghost sm" id="expandAll">Expand all</button>
+      <button class="btn ghost sm" id="collapseAll">Collapse all</button>
+      <span class="hint">Amber notes are assumptions that need confirming.</span>
+    </div>
+
+    <!-- 1. VOLUME -->
+    <div class="card"><h2><span class="num">1</span> Volume <span class="sub" id="subVolume">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">Start here. Everything else sizes itself off this number — trucks, people, hours.</div>
+        <div class="row"><div class="lbl">Mattresses collected per month</div>
+          <div class="inp"><input type="number" id="volume" value="1200" min="0" step="50"></div></div>
+        <div style="padding:2px 0 10px">
+          <input type="range" id="volSlider" min="0" max="5000" step="50" value="1200">
+          <div class="rangewrap"><span>0</span><span>2,500</span><span>5,000</span></div>
+        </div>
+        <div class="row"><div class="lbl">Working days per month</div>
+          <div class="inp"><input type="number" id="daysMonth" value="22" min="1" step="1"></div></div>
+        <div class="row"><div class="lbl">Throughput</div><div class="derived" id="perDay">—</div></div>
+      </div>
+    </div>
+
+    <!-- 2. WINNING THE WORK -->
+    <div class="card"><h2><span class="num">2</span> Winning the work <span class="sub" id="subAcq">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">What it costs to get a mattress in the truck in the first place. B2B volume carries almost no acquisition cost — this split matters more than any other input.</div>
+        <div class="row"><div class="lbl">Volume from contracts / B2B<small>Retailers, councils, hotels, aged care.</small></div>
+          <div class="inp"><input type="number" id="pctContract" value="65" min="0" max="100" step="5"><span class="suf">%</span></div></div>
+
+        <div class="grouphd">Consumer volume <span class="tot" id="grpConsumer">—</span></div>
+        <div class="row sub"><div class="lbl">Cost per lead (paid)<small>Blended Google + Meta cost per enquiry.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="cpl" value="25" step="1"></div></div>
+        <div class="row sub"><div class="lbl">Lead → booked job conversion</div>
+          <div class="inp"><input type="number" id="convRate" value="40" min="1" max="100" step="1"><span class="suf">%</span></div></div>
+        <div class="row sub"><div class="lbl">Mattresses per consumer job</div>
+          <div class="inp"><input type="number" id="mattPerJob" value="1.6" min="0.1" step="0.1"></div></div>
+        <div class="row sub"><div class="lbl">Acquisition cost per consumer mattress</div><div class="derived" id="acqConsumer">—</div></div>
+
+        <div class="grouphd">Contract volume <span class="tot" id="grpContract">—</span></div>
+        <div class="row sub"><div class="lbl">Account management / BD<small>Winning and holding B2B accounts: BD time, rebates, admin.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="bdCost" value="2000" step="100"><span class="suf">/mo</span></div></div>
+
+        <div class="row"><div class="lbl"><b>Blended acquisition per mattress</b></div><div class="derived" id="acqPerMatt">—</div></div>
+      </div>
+    </div>
+
+    <!-- 3. VEHICLES -->
+    <div class="card"><h2><span class="num">3</span> Vehicles &amp; fleet <span class="sub" id="subVehicles">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">Every truck cost in one place. Driver and offsider wages are <b>not</b> here — they sit in People, so you can see the true cost of a head separately from the truck it rides in.</div>
+
+        <div class="grouphd">Capacity</div>
+        <div class="row sub"><div class="lbl">Mattresses per load<small>How many fit in one truck load.</small></div>
+          <div class="inp"><input type="number" id="loadCapacity" value="35" min="1" step="1"></div></div>
+        <div class="row sub"><div class="lbl">Hours per collection round<small>Door to door and back, including tipping and unloading.</small></div>
+          <div class="inp"><input type="number" id="hoursPerLoad" value="3.5" min="0.25" step="0.25"><span class="suf">hrs</span></div></div>
+        <div class="row sub"><div class="lbl">Crew hours on the road per day<small>How long the truck is actually out. Anything left over is yard time.</small></div>
+          <div class="inp"><input type="number" id="crewHoursDay" value="8" min="1" step="0.5"><span class="suf">hrs</span></div></div>
+        <div class="row sub"><div class="lbl">Loads per truck per day</div><div class="derived" id="loadsDay">—</div></div>
+        <div class="row sub"><div class="lbl">Capacity per truck</div><div class="derived" id="truckCap">—</div></div>
+        <div class="row"><div class="lbl">Trucks<small>Auto sizes the fleet to the volume. Switch to Manual to fix the fleet and see the effect.</small></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="toggle"><button id="trkAuto" class="on">Auto</button><button id="trkManual">Manual</button></div>
+            <div class="inp"><input type="number" id="vehicles" value="1" min="0" step="1" disabled></div>
+          </div></div>
+        <div class="row"><div class="lbl">Fleet utilisation</div><div class="derived" id="truckUtil">—</div></div>
+        <div class="alert" id="truckAlert"></div>
+
+        <div class="grouphd">Cost per truck, per month <span class="tot" id="grpPerTruck">—</span></div>
+        <div class="row sub"><div class="lbl">Finance or lease</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="vFinance" value="2000" step="50"></div></div>
+        <div class="row sub"><div class="lbl">Registration &amp; insurance</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="vInsurance" value="350" step="25"></div></div>
+        <div class="row sub"><div class="lbl">Fuel</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="vFuel" value="1400" step="50"></div></div>
+        <div class="row sub"><div class="lbl">Servicing, tyres &amp; repairs</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="vService" value="450" step="25"></div></div>
+        <div class="row sub"><div class="lbl">Tolls &amp; parking</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="vTolls" value="150" step="25"></div></div>
+
+        <div class="row"><div class="lbl"><b>Total fleet cost</b></div><div class="derived" id="vehTotal">—</div></div>
+        <div class="row"><div class="lbl">Fleet cost per mattress</div><div class="derived" id="vehPerMatt">—</div></div>
+      </div>
+    </div>
+
+    <!-- 4. PEOPLE -->
+    <div class="card"><h2><span class="num">4</span> People <span class="sub" id="subPeople">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">Every wage cost in one place — on the truck and in the yard. Set the wage basis once at the top; it applies to everyone below. The <b>team roster</b> on the right shows exactly who you're paying and how their day splits.</div>
+
+        <div class="grouphd">Wage basis</div>
+        <div class="row sub"><div class="lbl">Employment on-costs<small class="flag">Super, workers comp, leave loading, payroll tax. ~25–30% is typical. Needs confirmation for your entity.</small></div>
+          <div class="inp"><input type="number" id="onCosts" value="27" min="0" step="1"><span class="suf">%</span></div></div>
+        <div class="row sub"><div class="lbl">Productive hours per person per month<small class="flag">Real productive time, not paid time. 38hr week ≈ 165hr/mo; at 85% productive ≈ 140.</small></div>
+          <div class="inp"><input type="number" id="hrsPerson" value="140" min="1" step="5"></div></div>
+
+        <div class="grouphd">Truck crew <span class="tot" id="grpCrew">—</span></div>
+        <div class="row sub"><div class="lbl">Drivers per truck</div>
+          <div class="inp"><input type="number" id="driversPerTruck" value="1" min="0" step="1"></div></div>
+        <div class="row sub"><div class="lbl">Offsiders per truck<small>Second person doing the lifting.</small></div>
+          <div class="inp"><input type="number" id="offsidersPerTruck" value="1" min="0" step="1"></div></div>
+        <div class="row sub"><div class="lbl">Crew base wage</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="crewRate" value="35" step="1"><span class="suf">/hr</span></div></div>
+        <div class="row sub"><div class="lbl">Crew headcount</div><div class="derived" id="crewCount">—</div></div>
+        <div class="row sub"><div class="lbl">Crew hours on the truck</div><div class="derived" id="crewTruckHrs">—</div></div>
+        <div class="alert" id="crewAlert"></div>
+
+        <div class="grouphd">Double-hatting</div>
+        <div class="row sub"><div class="lbl">Truck crew also dismantle<small>Crew rarely spend a whole month on the road. Turn this on and their spare hours go to the dismantling line before you hire anyone dedicated — usually the single cheapest lever in the model.</small></div>
+          <div class="toggle"><button id="dualOn" class="on">On</button><button id="dualOff">Off</button></div></div>
+        <div class="row sub"><div class="lbl">Spare crew hours redirected to the yard</div><div class="derived" id="dualHrs">—</div></div>
+
+        <div class="grouphd">Dismantling <span class="tot" id="grpDis">—</span></div>
+        <div class="row sub"><div class="lbl">Mattresses pulled apart per hour, per person<small>Your assumption: 6/hr.</small></div>
+          <div class="inp"><input type="number" id="rateHr" value="6" min="0.5" step="0.5"></div></div>
+        <div class="row sub"><div class="lbl">Dismantler base wage</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="disRate" value="35" step="1"><span class="suf">/hr</span></div></div>
+        <div class="row sub"><div class="lbl">Paid as<small>Rostered pays a full month whether the work is there or not. Casual pays only the hours worked — cheaper, but harder to staff reliably.</small></div>
+          <div class="toggle"><button id="payRostered" class="on">Rostered</button><button id="payCasual">Casual</button></div></div>
+        <div class="row sub"><div class="lbl">Total dismantling hours needed</div><div class="derived" id="hoursNeeded">—</div></div>
+        <div class="row sub"><div class="lbl">Hours left for dedicated dismantlers<small>What the truck crew can't absorb.</small></div><div class="derived" id="hoursLeft">—</div></div>
+        <div class="row sub"><div class="lbl">Dedicated dismantlers<small>People who only work the yard. Auto sizes to whatever the crew can't cover.</small></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="toggle"><button id="disAuto" class="on">Auto</button><button id="disManual">Manual</button></div>
+            <div class="inp"><input type="number" id="dismantlers" value="2" min="0" step="1" disabled></div>
+          </div></div>
+        <div class="row sub"><div class="lbl">Dedicated dismantler utilisation</div><div class="derived" id="disUtil">—</div></div>
+        <div class="alert" id="disAlert"></div>
+
+        <div class="grouphd">Salaried roles <span class="tot" id="grpSalary">—</span></div>
+        <div class="row sub"><div class="lbl">Supervisor / leading hand<small class="flag">Number of supervisors. Leave at 0 for a small site where the leading hand is one of the crew.</small></div>
+          <div class="inp"><input type="number" id="supervisors" value="0" min="0" step="1"></div></div>
+        <div class="row sub"><div class="lbl">Supervisor base salary</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="supervisorSalary" value="6500" step="250"><span class="suf">/mo</span></div></div>
+        <div class="row sub"><div class="lbl">Office / admin base salary<small class="flag">Bookings, invoicing, scheduling. 0 if head office covers it.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="adminSalary" value="0" step="250"><span class="suf">/mo</span></div></div>
+
+        <div class="row"><div class="lbl">Loaded hourly cost<small>Base wage plus on-costs — the number that actually leaves the bank.</small></div><div class="derived" id="loadedRate">—</div></div>
+        <div class="row"><div class="lbl">Total headcount</div><div class="derived" id="totalHeads">—</div></div>
+        <div class="row"><div class="lbl"><b>Total people cost</b></div><div class="derived" id="peopleTotal">—</div></div>
+        <div class="row"><div class="lbl">People cost per mattress</div><div class="derived" id="peoplePerMatt">—</div></div>
+      </div>
+    </div>
+
+    <!-- 5. FACILITY -->
+    <div class="card"><h2><span class="num">5</span> Warehouse &amp; facility <span class="sub" id="subFacility">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">Fixed from the day you sign. This is the cost that hurts most during the ramp.</div>
+        <div class="row"><div class="lbl">Rent basis</div>
+          <div class="toggle"><button id="rentMo" class="on">$ / month</button><button id="rentSqm">$ / m² / yr</button></div></div>
+        <div class="row" id="rowRentMo"><div class="lbl">Warehouse rent<small>Net rent, excluding outgoings.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="rent" value="8000" step="250"><span class="suf">/mo</span></div></div>
+        <div class="row" id="rowRentSqm" style="display:none"><div class="lbl">Floor area<small>Room for inbound stacking, dismantling bays and baled output.</small></div>
+          <div class="inp"><input type="number" id="sqm" value="800" step="50"><span class="suf">m²</span></div></div>
+        <div class="row" id="rowRateSqm" style="display:none"><div class="lbl">Rent rate<small class="flag">Varies heavily by state and precinct. Needs a quote from a local agent.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="rateSqm" value="140" step="5"><span class="suf">/m²/yr</span></div></div>
+        <div class="row"><div class="lbl">Outgoings<small class="flag">Council rates, land tax, body corp, building insurance. Often 15–25% on top of net rent.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="outgoings" value="1600" step="100"><span class="suf">/mo</span></div></div>
+        <div class="row"><div class="lbl">Utilities<small class="flag">Power, water, waste bins, internet.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="utilities" value="700" step="50"><span class="suf">/mo</span></div></div>
+        <div class="row"><div class="lbl"><b>Total facility cost</b></div><div class="derived" id="facilityTotal">—</div></div>
+      </div>
+    </div>
+
+    <!-- 6. PLANT & OVERHEAD -->
+    <div class="card"><h2><span class="num">6</span> Plant, consumables &amp; overhead <span class="sub" id="subOverhead">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">Everything that isn't a truck, a person or a building.</div>
+        <div class="row"><div class="lbl">Consumables per mattress<small class="flag">Blades, gloves, PPE, bags, strapping, baling wire, pallet wrap.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="consumables" value="1.2" step="0.1"></div></div>
+        <div class="row"><div class="lbl">Plant hire &amp; maintenance<small class="flag">Baler, forklift, bins, compactor servicing.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="plantMaint" value="900" step="100"><span class="suf">/mo</span></div></div>
+        <div class="row"><div class="lbl">Insurance &amp; compliance<small class="flag">Public liability, EPA licence fees, site compliance.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="insurance" value="900" step="100"><span class="suf">/mo</span></div></div>
+        <div class="row"><div class="lbl">Admin, software &amp; ops overhead<small class="flag">Booking system, phones, bookkeeping, share of head office.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="admin" value="1800" step="100"><span class="suf">/mo</span></div></div>
+        <div class="row"><div class="lbl"><b>Total plant &amp; overhead</b></div><div class="derived" id="overheadTotal">—</div></div>
+      </div>
+    </div>
+
+    <!-- 7. DISPOSAL & RECOVERY -->
+    <div class="card"><h2><span class="num">7</span> Disposal &amp; material recovery <span class="sub" id="subMaterial">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">What happens to the mattress once it's apart. Landfill levies differ sharply between states — this block is often what decides whether a state works.</div>
+        <div class="row"><div class="lbl">Residual disposal per mattress<small class="flag">The fraction that can't be recovered still goes to landfill. Needs confirmation per state.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="disposal" value="6" step="0.5"></div></div>
+        <div class="row"><div class="lbl">Outbound freight to processors<small class="flag">Moving baled output to the mill or offtake partner.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="outFreight" value="1.5" step="0.5"></div></div>
+        <div class="row"><div class="lbl">Steel / spring revenue per mattress<small class="flag">Scrap steel price is volatile and freight to the mill matters.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="steelRev" value="3.5" step="0.5"></div></div>
+        <div class="row"><div class="lbl">Foam, timber &amp; textile revenue<small class="flag">Often near zero depending on local offtake. Needs confirmation.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="otherRev" value="1" step="0.5"></div></div>
+        <div class="row"><div class="lbl"><b>Net material position per mattress</b></div><div class="derived" id="matNet">—</div></div>
+      </div>
+    </div>
+
+    <!-- 8. REVENUE -->
+    <div class="card"><h2><span class="num">8</span> Pricing &amp; revenue <span class="sub" id="subRevenue">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">What you charge. Contract pricing is lower per unit but predictable and cheap to win.</div>
+        <div class="row"><div class="lbl">Consumer price per mattress</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="priceConsumer" value="89" step="1"></div></div>
+        <div class="row"><div class="lbl">Contract / B2B price per mattress</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="priceContract" value="45" step="1"></div></div>
+        <div class="row"><div class="lbl">Stewardship / grant income per mattress<small class="flag">Only include if a confirmed scheme or council subsidy applies in that state. Leave at 0 otherwise.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="stewardship" value="0" step="1"></div></div>
+        <div class="row"><div class="lbl"><b>Blended revenue per mattress</b></div><div class="derived" id="blendedRev">—</div></div>
+      </div>
+    </div>
+
+    <!-- 9. SETUP -->
+    <div class="card"><h2><span class="num">9</span> One-off setup capital <span class="sub" id="subCapital">—</span><span class="chev">▾</span></h2>
+      <div class="body">
+        <div class="lead">Cash out the door before the first mattress is collected. Drives the payback figure, not the monthly P&amp;L.</div>
+        <div class="row"><div class="lbl">Lease bond / bank guarantee<small class="flag">Commonly 3 months gross rent.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="capBond" value="28000" step="1000"></div></div>
+        <div class="row"><div class="lbl">Site fit-out<small class="flag">Racking, bays, lighting, safety, signage, amenities.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="capFitout" value="35000" step="1000"></div></div>
+        <div class="row"><div class="lbl">Vehicle purchase / deposit<small>0 if trucks are fully financed and captured in the monthly fleet cost.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="capVehicle" value="20000" step="1000"></div></div>
+        <div class="row"><div class="lbl">Plant &amp; equipment<small class="flag">Baler, forklift, bins, hand tools, workbenches.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="capPlant" value="60000" step="1000"></div></div>
+        <div class="row"><div class="lbl">Licensing, legal &amp; EPA<small class="flag">Planning, permits, waste facility approvals. Timeline risk as much as cost.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="capLicence" value="15000" step="1000"></div></div>
+        <div class="row"><div class="lbl">Recruitment, training &amp; launch marketing</div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="capLaunch" value="20000" step="1000"></div></div>
+        <div class="row"><div class="lbl">Working capital buffer<small class="flag">Months of loss-making trade while volume ramps. Do not set this to 0.</small></div>
+          <div class="inp"><span class="pre">$</span><input type="number" id="capWorking" value="60000" step="5000"></div></div>
+        <div class="row"><div class="lbl"><b>Total setup capital</b></div><div class="derived" id="capTotal">—</div></div>
+      </div>
+    </div>
+
+    <div class="caveat">
+      <b>Before this goes to Richard — confirm these per state.</b> The defaults are assumptions, not verified figures.
+      <ul>
+        <li><b>Landfill levy / residual disposal</b> — differs materially between states and is a direct per-mattress cost.</li>
+        <li><b>Industrial rent and outgoings</b> — get a real quote from a local agent for the precinct you'd actually take.</li>
+        <li><b>EPA / planning approval</b> — some states require a licensed waste facility. Cost is manageable; the timeline is the risk.</li>
+        <li><b>Offtake for foam, textiles and timber</b> — no local processor means that revenue is zero and freight goes up.</li>
+        <li><b>Contract volume</b> — the model turns on the B2B percentage. Test at 0% before committing to anything.</li>
+        <li><b>Ramp</b> — this shows a steady month. It does not show the 6–12 months of under-utilised fixed cost getting there.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results">
+
+    <div class="savebar">
+      <div class="t">Save this scenario</div>
+      <div class="r">
+        <div class="inp"><input type="text" id="scenLabel" placeholder="VIC"></div>
+        <button class="btn" id="addBtn">Add to comparison</button>
+      </div>
+      <div class="saved-msg" id="savedMsg"></div>
+    </div>
+
+    <div class="verdict">
+      <div class="top">
+        <div class="vlabel" id="vTitle">Monthly profit — VIC</div>
+        <div class="vbig" id="vProfit">—</div>
+        <div class="vsub" id="vSub">—</div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="k">Cost / mattress</div><div class="v" id="kCost">—</div></div>
+        <div class="kpi"><div class="k">Revenue / mattress</div><div class="v" id="kRev">—</div></div>
+        <div class="kpi"><div class="k">Margin / mattress</div><div class="v" id="kMargin">—</div></div>
+        <div class="kpi"><div class="k">Margin %</div><div class="v" id="kMarginPct">—</div></div>
+        <div class="kpi"><div class="k">Break-even volume</div><div class="v" id="kBreakeven">—</div></div>
+        <div class="kpi"><div class="k">Setup payback</div><div class="v" id="kPayback">—</div></div>
+      </div>
+    </div>
+
+    <div class="card"><h2>Team roster <span class="sub" id="subRoster">—</span><span class="chev">▾</span></h2>
+      <div class="roster" id="roster"></div>
+    </div>
+
+    <div class="card"><h2>Where the money goes <span class="chev">▾</span></h2>
+      <div class="stack" id="stackBars"></div>
+    </div>
+
+    <div class="card"><h2>Profit vs volume <span class="chev">▾</span></h2>
+      <div class="body" style="padding:14px 12px 6px">
+        <svg id="chart" viewBox="0 0 380 190" width="100%" height="190"></svg>
+        <div style="font-size:12.5px;line-height:1.5;color:var(--muted);padding:0 6px 8px">The steps are where you add a truck or a dismantler. Break-even is where the line first crosses zero.</div>
+      </div>
+    </div>
+
+    <div class="card"><h2>Monthly P&amp;L <span class="chev">▾</span></h2>
+      <table id="pl"></table>
+    </div>
+
+    <div class="btns">
+      <button class="btn" onclick="window.print()">Print / save as PDF</button>
+      <button class="btn ghost" id="copyBtn">Copy summary</button>
+      <button class="btn ghost" id="resetBtn">Reset defaults</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ==================== COMPARE ==================== -->
+<div class="wrap wide" id="viewCompare" style="display:none">
+
+  <div id="cmpEmpty" class="cmp-empty">
+    <b>No states saved yet</b>
+    Fill out a state on the Model tab, then hit <span style="color:var(--green);font-weight:700">Add to comparison</span>.<br>
+    Save two or three and they'll sit side by side here with the winner on each line highlighted.
+  </div>
+
+  <div id="cmpContent" style="display:none">
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:24px 0 16px">
+      <div id="cmpVerdict" style="font-size:15px"></div>
+      <div style="flex:1"></div>
+      <button class="btn ghost sm" id="exportBtn">Export saved states</button>
+      <button class="btn ghost sm" id="importBtn">Import</button>
+      <button class="btn ghost sm" id="clearBtn">Clear all</button>
+      <button class="btn sm" onclick="window.print()">Print / PDF</button>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+    </div>
+
+    <div class="cmp-charts">
+      <div class="card"><h2>Monthly profit <span class="chev">▾</span></h2>
+        <div class="stack" id="cmpProfitBars"></div>
+      </div>
+      <div class="card"><h2>Revenue vs cost per mattress <span class="chev">▾</span></h2>
+        <div class="stack" id="cmpUnitBars"></div>
+      </div>
+    </div>
+
+    <div class="card"><h2>Side by side <span class="chev">▾</span></h2>
+      <div class="cmp-wrap"><table class="cmp" id="cmpTable"></table></div>
+    </div>
+
+    <div class="caveat">
+      <b>Reading this table.</b> Green is the best figure on that line, not necessarily the best state — a state can win on cost per mattress and still lose on payback because it can't reach the volume. Weight <b>break-even headroom</b> and <b>payback</b> above margin percentage: they decide whether the state survives its first year. Saved states live in this page only — use <b>Export</b> to keep them.
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+
+  var IDS = ["volume","daysMonth","pctContract","cpl","convRate","mattPerJob","bdCost",
+    "loadCapacity","hoursPerLoad","crewHoursDay","vehicles","vFinance","vInsurance","vFuel","vService","vTolls",
+    "onCosts","hrsPerson","driversPerTruck","offsidersPerTruck","crewRate",
+    "rateHr","disRate","dismantlers","supervisors","supervisorSalary","adminSalary",
+    "rent","sqm","rateSqm","outgoings","utilities",
+    "consumables","plantMaint","insurance","admin",
+    "disposal","outFreight","steelRev","otherRev",
+    "priceConsumer","priceContract","stewardship",
+    "capBond","capFitout","capVehicle","capPlant","capLicence","capLaunch","capWorking"];
+
+  var defaults = {};
+  IDS.forEach(function(i){ defaults[i] = $(i).value; });
+
+  var modes = {trk:"auto", dis:"auto", pay:"rostered", rent:"mo", dual:"on"};
+  var scenarios = [];
+
+  function money(v, dp){
+    dp = dp === undefined ? 0 : dp;
+    if (v === null || v === undefined || !isFinite(v)) return "—";
+    var neg = v < 0;
+    var s = Math.abs(v).toLocaleString("en-AU", {minimumFractionDigits:dp, maximumFractionDigits:dp});
+    return (neg ? "-$" : "$") + s;
+  }
+  function num(v, dp){
+    dp = dp === undefined ? 0 : dp;
+    if (v === null || v === undefined || !isFinite(v)) return "—";
+    return v.toLocaleString("en-AU", {minimumFractionDigits:dp, maximumFractionDigits:dp});
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function readInputs(){
+    var v = {};
+    IDS.forEach(function(id){
+      var x = parseFloat($(id).value);
+      v[id] = isFinite(x) ? x : 0;
+    });
+    v.state = $("stateName").value;
+    v.trkMode = modes.trk;
+    v.disMode = modes.dis;
+    v.payMode = modes.pay;
+    v.rentMode = modes.rent;
+    v.dualMode = modes.dual;
+    return v;
+  }
+
+  // ---------- the model ----------
+  // volOverride lets the chart / break-even scan re-run the whole thing (including
+  // truck and dismantler counts) at a different volume, so step costs are honest.
+  function compute(v, volOverride){
+    var vol = Math.max(0, volOverride === undefined ? v.volume : volOverride);
+    var days = Math.max(1, v.daysMonth);
+
+    // --- acquisition
+    var pctC = Math.min(100, Math.max(0, v.pctContract)) / 100;
+    var consumerVol = vol * (1 - pctC);
+    var contractVol = vol * pctC;
+    var conv = Math.max(0.01, v.convRate / 100);
+    var mpj = Math.max(0.1, v.mattPerJob);
+    var acqPerConsumerMatt = v.cpl / (conv * mpj);
+    var adSpend = consumerVol * acqPerConsumerMatt;
+    var bd = v.bdCost;
+    var acqTotal = adSpend + bd;
+
+    // --- vehicles
+    var loadCap = Math.max(1, v.loadCapacity);
+    var hoursPerLoad = Math.max(0.25, v.hoursPerLoad);
+    var crewHoursDay = Math.max(0.5, v.crewHoursDay);
+    var loadsPerDay = crewHoursDay / hoursPerLoad;
+    var capPerTruck = loadCap * loadsPerDay * days;
+    var trucksReq = vol / capPerTruck;
+    var trucks = v.trkMode === "auto" ? Math.ceil(trucksReq) : Math.max(0, v.vehicles);
+    var perTruck = v.vFinance + v.vInsurance + v.vFuel + v.vService + v.vTolls;
+    var vehTotal = trucks * perTruck;
+    var truckUtil = trucks > 0 ? (trucksReq / trucks) * 100 : null;
+    var truckShort = trucks * capPerTruck < vol;
+
+    // --- people
+    var onc = 1 + v.onCosts / 100;
+    var hrsPerson = Math.max(1, v.hrsPerson);
+    var crewLoaded = v.crewRate * onc;
+    var disLoaded = v.disRate * onc;
+    var drivers = trucks * v.driversPerTruck;
+    var offsiders = trucks * v.offsidersPerTruck;
+    var crewHeads = drivers + offsiders;
+    var crewPerTruck = v.driversPerTruck + v.offsidersPerTruck;
+    var crewCost = crewHeads * hrsPerson * crewLoaded;
+
+    // how much of the crew's month is actually spent on the road
+    var loadsNeeded = vol / loadCap;
+    var crewTruckHours = loadsNeeded * hoursPerLoad * crewPerTruck;
+    var crewHoursAvail = crewHeads * hrsPerson;
+    var crewShort = crewTruckHours > crewHoursAvail + 0.001;
+    var spareCrewHours = Math.max(0, crewHoursAvail - crewTruckHours);
+
+    // dismantling — crew soak up what they can before anyone dedicated is hired
+    var rate = Math.max(0.1, v.rateHr);
+    var hoursNeeded = vol / rate;
+    var dualHours = v.dualMode === "on" ? Math.min(spareCrewHours, hoursNeeded) : 0;
+    var hoursLeft = Math.max(0, hoursNeeded - dualHours);
+    var disReq = hoursLeft / hrsPerson;
+    var disHeads = v.disMode === "auto" ? Math.ceil(disReq) : Math.max(0, v.dismantlers);
+    var disCost = v.payMode === "casual"
+      ? Math.min(hoursLeft, disHeads * hrsPerson) * disLoaded
+      : disHeads * hrsPerson * disLoaded;
+    var disUtil = disHeads > 0 ? (disReq / disHeads) * 100 : (hoursLeft > 0 ? null : 100);
+    var disShort = disHeads * hrsPerson < hoursLeft - 0.001;
+
+    var supCost = v.supervisors * v.supervisorSalary * onc;
+    var adminCost = v.adminSalary * onc;
+    var salaryCost = supCost + adminCost;
+    var peopleTotal = crewCost + disCost + salaryCost;
+    var totalHeads = crewHeads + disHeads + v.supervisors + (v.adminSalary > 0 ? 1 : 0);
+
+    // --- facility
+    var rent = v.rentMode === "mo" ? v.rent : (v.sqm * v.rateSqm / 12);
+    var facility = rent + v.outgoings + v.utilities;
+
+    // --- plant & overhead
+    var consumVar = vol * v.consumables;
+    var overheadFixed = v.plantMaint + v.insurance + v.admin;
+
+    // --- disposal & material
+    var disposalVar = vol * v.disposal;
+    var freightVar = vol * v.outFreight;
+    var matRevPerMatt = v.steelRev + v.otherRev;
+    var matRev = vol * matRevPerMatt;
+    var matNetPerMatt = matRevPerMatt - v.disposal - v.outFreight;
+
+    // --- revenue
+    var serviceRev = consumerVol * v.priceConsumer + contractVol * v.priceContract;
+    var stewRev = vol * v.stewardship;
+    var revenue = serviceRev + stewRev + matRev;
+    var revPerMatt = (1 - pctC) * v.priceConsumer + pctC * v.priceContract + v.stewardship + matRevPerMatt;
+
+    // --- roll-up
+    var totalCost = acqTotal + vehTotal + peopleTotal + facility + consumVar + overheadFixed + disposalVar + freightVar;
+    var costPerMatt = vol > 0 ? totalCost / vol : null;
+    var profit = revenue - totalCost;
+    var marginPerMatt = costPerMatt === null ? null : revPerMatt - costPerMatt;
+    var marginPct = revenue > 0 ? (profit / revenue) * 100 : null;
+
+    // step costs mean fixed/variable is only a guide — the honest break-even is scanned
+    var stepFixed = bd + vehTotal + peopleTotal + facility + overheadFixed;
+    var varPerMatt = (1 - pctC) * acqPerConsumerMatt + v.consumables + v.disposal + v.outFreight;
+    var contribution = revPerMatt - varPerMatt;
+
+    var capital = v.capBond + v.capFitout + v.capVehicle + v.capPlant + v.capLicence + v.capLaunch + v.capWorking;
+    var payback = profit > 0 ? capital / profit : null;
+
+    return {
+      state:v.state, vol:vol, perDay: vol / days,
+      consumerVol:consumerVol, contractVol:contractVol, pctContract: pctC * 100,
+      acqPerConsumerMatt:acqPerConsumerMatt, adSpend:adSpend, bd:bd, acqTotal:acqTotal,
+      acqPerMatt: vol > 0 ? acqTotal / vol : null,
+      capPerTruck:capPerTruck, loadsPerDay:loadsPerDay, trucksReq:trucksReq, trucks:trucks, perTruck:perTruck,
+      vehTotal:vehTotal, truckUtil:truckUtil, truckShort:truckShort,
+      vehPerMatt: vol > 0 ? vehTotal / vol : null,
+      crewLoaded:crewLoaded, disLoaded:disLoaded, drivers:drivers, offsiders:offsiders,
+      crewHeads:crewHeads, crewCost:crewCost, hrsPerson:hrsPerson,
+      crewTruckHours:crewTruckHours, crewHoursAvail:crewHoursAvail, crewShort:crewShort,
+      spareCrewHours:spareCrewHours, dualHours:dualHours, dualOn: v.dualMode === "on",
+      hoursNeeded:hoursNeeded, hoursLeft:hoursLeft, disReq:disReq, disHeads:disHeads, disCost:disCost,
+      disUtil:disUtil, disShort:disShort,
+      supervisors:v.supervisors, supCost:supCost, adminCost:adminCost, salaryCost:salaryCost,
+      peopleTotal:peopleTotal, totalHeads:totalHeads,
+      peoplePerMatt: vol > 0 ? peopleTotal / vol : null,
+      rent:rent, facility:facility,
+      consumVar:consumVar, overheadFixed:overheadFixed,
+      disposalVar:disposalVar, freightVar:freightVar, matRev:matRev,
+      matRevPerMatt:matRevPerMatt, matNetPerMatt:matNetPerMatt,
+      serviceRev:serviceRev, stewRev:stewRev, revenue:revenue, revPerMatt:revPerMatt,
+      totalCost:totalCost, costPerMatt:costPerMatt, profit:profit, annualProfit:profit*12,
+      marginPerMatt:marginPerMatt, marginPct:marginPct,
+      stepFixed:stepFixed, varPerMatt:varPerMatt, contribution:contribution,
+      capital:capital, payback:payback
+    };
+  }
+
+  // Scan for the first volume where the stepped model turns a profit.
+  function findBreakeven(v){
+    var LIMIT = 20000;
+    if (compute(v, LIMIT).profit < 0) return null;
+    var lo = 0, hi = LIMIT;
+    // coarse scan first (steps make it non-monotonic in places, so walk it)
+    var step = 25;
+    var found = null;
+    for (var x = 0; x <= LIMIT; x += step){
+      if (compute(v, x).profit >= 0){ found = x; break; }
+    }
+    if (found === null) return null;
+    // refine to the nearest mattress
+    for (var y = Math.max(0, found - step); y <= found; y++){
+      if (compute(v, y).profit >= 0) return y;
+    }
+    return found;
+  }
+
+  // ---------- render ----------
+  function render(v, m, be){
+    if (v.trkMode === "auto") $("vehicles").value = m.trucks;
+    if (v.disMode === "auto") $("dismantlers").value = m.disHeads;
+    if ($("volSlider").value !== String(v.volume)) {
+      if (v.volume <= 5000) $("volSlider").value = v.volume;
+    }
+
+    var pm = function(x){ return m.vol > 0 ? money(x / m.vol, 2) + "/matt" : "—"; };
+
+    // section chips
+    $("subVolume").textContent = num(m.vol, 0) + "/mo";
+    $("subAcq").textContent = money(m.acqTotal) + "/mo";
+    $("subVehicles").textContent = money(m.vehTotal) + "/mo";
+    $("subPeople").textContent = money(m.peopleTotal) + "/mo";
+    $("subFacility").textContent = money(m.facility) + "/mo";
+    $("subOverhead").textContent = money(m.overheadFixed + m.consumVar) + "/mo";
+    $("subMaterial").textContent = money(m.matNetPerMatt, 2) + "/matt";
+    $("subRevenue").textContent = money(m.revPerMatt, 2) + "/matt";
+    $("subCapital").textContent = money(m.capital);
+
+    // 1 volume
+    $("perDay").textContent = num(m.perDay, 1) + " mattresses/day";
+
+    // 2 acquisition
+    $("grpConsumer").textContent = num(Math.round(m.consumerVol), 0) + " mattresses · " + money(m.adSpend) + "/mo";
+    $("grpContract").textContent = num(Math.round(m.contractVol), 0) + " mattresses · " + money(m.bd) + "/mo";
+    $("acqConsumer").textContent = money(m.acqPerConsumerMatt, 2);
+    $("acqPerMatt").textContent = money(m.acqPerMatt, 2);
+
+    // 3 vehicles
+    $("loadsDay").textContent = num(m.loadsPerDay, 2) + " loads/day";
+    $("truckCap").textContent = num(Math.round(m.capPerTruck), 0) + " mattresses/mo";
+    $("truckUtil").textContent = m.truckUtil === null ? "No trucks" : num(m.truckUtil, 0) + "% (" + num(m.trucksReq, 2) + " trucks' worth of work)";
+    $("truckUtil").className = "derived" + (m.truckUtil === null ? " bad" : (m.truckUtil > 100 ? " bad" : (m.truckUtil < 50 ? " warn" : "")));
+    $("truckAlert").style.display = m.truckShort ? "block" : "none";
+    if (m.truckShort){
+      $("truckAlert").textContent = "This fleet can't move that volume. " + m.trucks + " truck" + (m.trucks===1?"":"s") +
+        " covers " + num(Math.round(m.trucks * m.capPerTruck), 0) + " mattresses a month — you need " + Math.ceil(m.trucksReq) + ".";
+    }
+    $("grpPerTruck").textContent = money(m.perTruck) + " per truck";
+    $("vehTotal").textContent = money(m.vehTotal) + " /mo";
+    $("vehPerMatt").textContent = money(m.vehPerMatt, 2);
+
+    // 4 people
+    $("loadedRate").textContent = money(m.crewLoaded, 2) + "/hr crew · " + money(m.disLoaded, 2) + "/hr dismantle";
+    $("crewCount").textContent = num(m.drivers, 0) + " driver" + (m.drivers===1?"":"s") + " + " + num(m.offsiders,0) + " offsider" + (m.offsiders===1?"":"s");
+    $("grpCrew").textContent = money(m.crewCost) + "/mo · " + pm(m.crewCost);
+    $("crewTruckHrs").textContent = num(Math.round(m.crewTruckHours), 0) + " of " + num(Math.round(m.crewHoursAvail), 0) + " hrs on the road";
+    $("crewTruckHrs").className = "derived" + (m.crewShort ? " bad" : "");
+    $("crewAlert").style.display = m.crewShort ? "block" : "none";
+    if (m.crewShort){
+      $("crewAlert").textContent = "The crew can't cover the runs. " + num(Math.round(m.crewTruckHours),0) +
+        " crew-hours of collection work against " + num(Math.round(m.crewHoursAvail),0) +
+        " hours available — add a truck, add crew, or lift hours per person.";
+    }
+    $("dualHrs").textContent = m.dualOn
+      ? num(Math.round(m.dualHours), 0) + " hrs to the yard (" + num(Math.round(m.spareCrewHours - m.dualHours), 0) + " hrs idle)"
+      : "Off — " + num(Math.round(m.spareCrewHours), 0) + " spare crew hrs unused";
+    $("dualHrs").className = "derived" + (m.dualOn ? "" : " warn");
+    $("hoursNeeded").textContent = num(m.hoursNeeded, 0) + " hrs (" + num(m.hoursNeeded / m.hrsPerson, 2) + " people's worth)";
+    $("hoursLeft").textContent = num(Math.round(m.hoursLeft), 0) + " hrs";
+    $("grpDis").textContent = money(m.disCost) + "/mo · " + pm(m.disCost);
+    $("disUtil").textContent = m.disHeads === 0
+      ? (m.hoursLeft > 0 ? "No dismantlers" : "Crew covers it all")
+      : num(m.disUtil, 0) + "%";
+    $("disUtil").className = "derived" + (m.disHeads === 0 ? (m.hoursLeft > 0 ? " bad" : "") : (m.disUtil > 100 ? " bad" : (m.disUtil < 60 ? " warn" : "")));
+    $("disAlert").style.display = m.disShort ? "block" : "none";
+    if (m.disShort){
+      $("disAlert").textContent = "Not enough dismantling capacity. " + m.disHeads + " dedicated " + (m.disHeads===1?"person covers":"people cover") + " " +
+        num(Math.round(m.disHeads * m.hrsPerson), 0) + " hrs against " + num(Math.round(m.hoursLeft), 0) +
+        " hrs still to cover — you need " + Math.ceil(m.disReq) + ".";
+    }
+    renderRoster(m);
+    $("grpSalary").textContent = money(m.salaryCost) + "/mo";
+    $("totalHeads").textContent = num(m.totalHeads, 0) + " people";
+    $("peopleTotal").textContent = money(m.peopleTotal) + " /mo";
+    $("peoplePerMatt").textContent = money(m.peoplePerMatt, 2);
+
+    // 5-9
+    $("facilityTotal").textContent = money(m.facility) + " /mo";
+    $("overheadTotal").textContent = money(m.overheadFixed + m.consumVar) + " /mo";
+    $("matNet").textContent = money(m.matNetPerMatt, 2) + " per mattress";
+    $("blendedRev").textContent = money(m.revPerMatt, 2) + " per mattress";
+    $("capTotal").textContent = money(m.capital);
+
+    // verdict
+    $("vTitle").textContent = "Monthly profit — " + m.state;
+    $("vProfit").textContent = money(m.profit);
+    $("vProfit").className = "vbig " + (m.profit >= 0 ? "good" : "bad");
+    $("vSub").textContent = num(m.vol, 0) + " mattresses/mo · " + money(m.revenue) + " revenue · " + money(m.totalCost) + " cost";
+
+    $("kCost").textContent = money(m.costPerMatt, 2);
+    $("kRev").textContent = money(m.revPerMatt, 2);
+    $("kMargin").textContent = money(m.marginPerMatt, 2);
+    $("kMargin").className = "v " + ((m.marginPerMatt || 0) >= 0 ? "good" : "bad");
+    $("kMarginPct").textContent = m.marginPct === null ? "—" : num(m.marginPct, 1) + "%";
+    $("kMarginPct").className = "v " + ((m.marginPct || 0) >= 0 ? "good" : "bad");
+    $("kBreakeven").textContent = be === null ? "Never" : num(be, 0) + "/mo";
+    $("kBreakeven").className = "v " + (be === null ? "bad" : (be <= m.vol ? "good" : "bad"));
+    $("kPayback").textContent = m.payback === null ? "—" : num(m.payback, 1) + " mo";
+    $("kPayback").className = "v " + (m.payback === null ? "bad" : "good");
+
+    // cost stack — grouped the same way as the inputs
+    var d = m.vol || 1;
+    var stack = [
+      ["Winning the work", m.acqTotal / d],
+      ["Vehicles & fleet", m.vehTotal / d],
+      ["People", m.peopleTotal / d],
+      ["Warehouse & facility", m.facility / d],
+      ["Plant & overhead", (m.overheadFixed + m.consumVar) / d],
+      ["Disposal & freight", (m.disposalVar + m.freightVar) / d]
+    ];
+    var maxV = Math.max(m.revPerMatt, m.costPerMatt || 0, 0.01);
+    var html = "";
+    stack.forEach(function(s){
+      var pct = Math.max(0, Math.min(100, (s[1] / maxV) * 100));
+      html += '<div class="bar"><div class="t"><span>'+s[0]+'</span><b>'+money(s[1],2)+'</b></div>'+
+              '<div class="track"><div class="fill" style="width:'+pct+'%"></div></div></div>';
+    });
+    html += '<div class="bar" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line2)">'+
+            '<div class="t"><span>Material recovery income</span><b>'+money(m.matRevPerMatt,2)+'</b></div>'+
+            '<div class="track"><div class="fill rev" style="width:'+Math.max(0,Math.min(100,(m.matRevPerMatt/maxV)*100))+'%"></div></div></div>';
+    html += '<div class="bar"><div class="t"><span style="font-weight:800">Revenue per mattress</span><b>'+money(m.revPerMatt,2)+'</b></div>'+
+            '<div class="track"><div class="fill rev" style="width:'+Math.max(0,Math.min(100,(m.revPerMatt/maxV)*100))+'%"></div></div></div>';
+    $("stackBars").innerHTML = html;
+
+    drawChart(v, m, be);
+
+    // P&L
+    var rows = [
+      ["grp","Revenue"],
+      ["Consumer service revenue", m.consumerVol * v.priceConsumer],
+      ["Contract service revenue", m.contractVol * v.priceContract],
+      ["Stewardship / grant income", m.stewRev],
+      ["Material recovery revenue", m.matRev],
+      ["total","Total revenue", m.revenue],
+      ["grp","Cost"],
+      ["Winning the work — ads", -m.adSpend],
+      ["Winning the work — BD / account mgmt", -m.bd],
+      ["Vehicles & fleet (" + m.trucks + ")", -m.vehTotal],
+      ["People — truck crew (" + m.crewHeads + (m.dualOn && m.dualHours > 0.01 ? ", also dismantling" : "") + ")", -m.crewCost],
+      ["People — dedicated dismantlers (" + m.disHeads + ")", -m.disCost],
+      ["People — salaried roles", -m.salaryCost],
+      ["Warehouse, outgoings & utilities", -m.facility],
+      ["Consumables", -m.consumVar],
+      ["Plant, insurance & admin", -m.overheadFixed],
+      ["Residual disposal", -m.disposalVar],
+      ["Outbound freight", -m.freightVar],
+      ["total","Total cost", -m.totalCost],
+      ["total","Monthly profit", m.profit]
+    ];
+    var t = "<tr><th>Line</th><th>Per month</th><th>Per mattress</th></tr>";
+    rows.forEach(function(r){
+      if (r[0] === "grp"){
+        t += '<tr class="grp"><td colspan="3">'+r[1]+'</td></tr>'; return;
+      }
+      var isTot = r[0] === "total";
+      var label = isTot ? r[1] : r[0];
+      var val = isTot ? r[2] : r[1];
+      t += '<tr'+(isTot?' class="total"':'')+'><td>'+label+'</td><td><b>'+money(val)+'</b></td>'+
+           '<td><b>'+(m.vol>0?money(val/m.vol,2):"—")+'</b></td></tr>';
+    });
+    $("pl").innerHTML = t;
+  }
+
+  function renderRoster(m){
+    var H = m.hrsPerson;
+    var people = [];
+
+    // truck crew — every crew member has the same shape of day
+    var truckPer = m.crewHeads > 0 ? m.crewTruckHours / m.crewHeads : 0;
+    var yardPer  = m.crewHeads > 0 ? m.dualHours / m.crewHeads : 0;
+    for (var i = 0; i < m.drivers; i++)
+      people.push({role:"Driver " + (i+1), truck:truckPer, yard:yardPer});
+    for (var j = 0; j < m.offsiders; j++)
+      people.push({role:"Offsider " + (j+1), truck:truckPer, yard:yardPer});
+
+    // dedicated dismantlers — spread the remaining hours evenly
+    var perDis = m.disHeads > 0 ? Math.min(H, m.hoursLeft / m.disHeads) : 0;
+    for (var k = 0; k < m.disHeads; k++)
+      people.push({role:"Dismantler " + (k+1), truck:0, yard:perDis});
+
+    for (var s = 0; s < m.supervisors; s++)
+      people.push({role:"Supervisor " + (s+1), truck:0, yard:H, salaried:true});
+    if (m.adminCost > 0) people.push({role:"Office / admin", truck:0, yard:H, salaried:true});
+
+    var dualCount = (m.dualOn && yardPer > 0.01) ? m.crewHeads : 0;
+    var head = '<div class="rhead"><span class="big">' + people.length + '</span>' +
+      '<span class="lbl">' + (people.length === 1 ? "person" : "people") + " on the payroll — " +
+      m.drivers + " driver" + (m.drivers===1?"":"s") + ", " +
+      m.offsiders + " offsider" + (m.offsiders===1?"":"s") + ", " +
+      m.disHeads + " dedicated dismantler" + (m.disHeads===1?"":"s") +
+      (dualCount > 0 ? ", <b style=\"color:var(--green)\">" + dualCount + " double-hatting</b>" : "") +
+      '</span></div>';
+
+    var rows = "", shown = Math.min(people.length, 14);
+    for (var p = 0; p < shown; p++){
+      var per = people[p];
+      var t = Math.max(0, Math.min(100, (per.truck / H) * 100));
+      var y = Math.max(0, Math.min(100 - t, (per.yard / H) * 100));
+      var idle = Math.max(0, 100 - t - y);
+      var both = per.truck > 0.01 && per.yard > 0.01;
+      rows += '<div class="person">' +
+        '<div class="who">' + per.role +
+          (both ? '<em>truck + yard</em>' : (per.salaried ? '<em class="solo">salaried</em>' : '')) +
+        '</div>' +
+        '<div class="pbar">' +
+          '<span class="tk" style="width:'+t+'%"></span>' +
+          '<span class="yd" style="width:'+y+'%"></span>' +
+          '<span class="id" style="width:'+idle+'%"></span>' +
+        '</div>' +
+        '<div class="hrs">' + (per.truck > 0.01 ? num(Math.round(per.truck),0) + "h road · " : "") +
+          num(Math.round(per.yard),0) + "h yard" +
+          (idle > 1 ? " · " + num(Math.round(H - per.truck - per.yard),0) + "h idle" : "") +
+        '</div></div>';
+    }
+    if (people.length > shown) rows += '<div class="rmore">+ ' + (people.length - shown) + ' more not shown</div>';
+    if (people.length === 0) rows = '<div class="rmore">No one on the payroll at this volume.</div>';
+
+    var legend = '<div class="rlegend">' +
+      '<span><i style="background:var(--green)"></i>On the road</span>' +
+      '<span><i style="background:#fff"></i>In the yard</span>' +
+      '<span><i style="background:#2a2a2a"></i>Paid but idle</span>' +
+      '</div>';
+
+    $("roster").innerHTML = head + rows + legend;
+    $("subRoster").textContent = people.length + (people.length === 1 ? " person" : " people");
+  }
+
+  function drawChart(v, m, be){
+    var W = 380, H = 190, padL = 46, padR = 12, padT = 14, padB = 26;
+    var maxX = Math.max(m.vol * 2, (be || 0) * 1.6, 200);
+    var N = 70;
+    var pts = [];
+    for (var i = 0; i <= N; i++){
+      var x = (maxX / N) * i;
+      pts.push([x, compute(v, x).profit]);
+    }
+    var ys = pts.map(function(p){ return p[1]; });
+    var yMin = Math.min.apply(null, ys.concat([0]));
+    var yMax = Math.max.apply(null, ys.concat([0]));
+    if (yMax === yMin) yMax = yMin + 1;
+    var pad = (yMax - yMin) * 0.1;
+    yMin -= pad; yMax += pad;
+
+    var sx = function(x){ return padL + (x / maxX) * (W - padL - padR); };
+    var sy = function(y){ return padT + (1 - (y - yMin) / (yMax - yMin)) * (H - padT - padB); };
+
+    var s = "";
+    s += '<line x1="'+padL+'" y1="'+sy(0)+'" x2="'+(W-padR)+'" y2="'+sy(0)+'" stroke="#333" stroke-width="1"/>';
+    s += '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(H-padB)+'" stroke="#2a2a2a"/>';
+    s += '<polyline fill="none" stroke="#00ED00" stroke-width="2.2" points="'+
+         pts.map(function(p){ return sx(p[0]).toFixed(1)+','+sy(p[1]).toFixed(1); }).join(" ")+'"/>';
+
+    if (be !== null && be <= maxX){
+      s += '<line x1="'+sx(be)+'" y1="'+padT+'" x2="'+sx(be)+'" y2="'+(H-padB)+'" stroke="#666" stroke-dasharray="3,3"/>';
+      s += '<circle cx="'+sx(be)+'" cy="'+sy(0)+'" r="4" fill="#00ED00"/>';
+      s += '<text x="'+Math.min(W-72, sx(be)+6)+'" y="'+(padT+11)+'" fill="#9a9a9a">BE '+be.toLocaleString("en-AU")+'</text>';
+    }
+    if (m.vol <= maxX){
+      s += '<circle cx="'+sx(m.vol)+'" cy="'+sy(m.profit)+'" r="4.5" fill="#fff" stroke="#050505" stroke-width="1.5"/>';
+      s += '<text x="'+Math.min(W-82, sx(m.vol)+7)+'" y="'+(sy(m.profit)-9)+'" fill="#fff">Now '+m.vol.toLocaleString("en-AU")+'</text>';
+    }
+    var fmt = function(x){
+      var a = Math.abs(x);
+      if (a >= 1000) return (x<0?"-":"")+"$"+Math.round(a/1000)+"k";
+      return (x<0?"-":"")+"$"+Math.round(a);
+    };
+    s += '<text x="4" y="'+(sy(yMax)+9)+'">'+fmt(yMax)+'</text>';
+    s += '<text x="4" y="'+(sy(0)+4)+'">$0</text>';
+    s += '<text x="4" y="'+(sy(yMin)-1)+'">'+fmt(yMin)+'</text>';
+    s += '<text x="'+padL+'" y="'+(H-8)+'">0</text>';
+    s += '<text x="'+(W-padR-56)+'" y="'+(H-8)+'">'+Math.round(maxX).toLocaleString("en-AU")+' /mo</text>';
+    $("chart").innerHTML = s;
+  }
+
+  var current = {v:null, m:null, be:null};
+  function calc(){
+    var v = readInputs();
+    var m = compute(v);
+    var be = findBreakeven(v);
+    current = {v:v, m:m, be:be};
+    m.breakeven = be;
+    m.headroom = be === null ? null : m.vol - be;
+    render(v, m, be);
+    window.__JUNK_MODEL__ = m;
+    if (!$("scenLabel").value) $("scenLabel").placeholder = v.state;
+  }
+
+  // ================= COMPARISON =================
+  var METRICS = [
+    {sec:"Headline"},
+    {label:"Monthly profit", get:function(m){return m.profit;}, fmt:function(x){return money(x);}, dir:"high"},
+    {label:"Annual profit", get:function(m){return m.annualProfit;}, fmt:function(x){return money(x);}, dir:"high"},
+    {label:"Margin %", get:function(m){return m.marginPct;}, fmt:function(x){return x===null?"—":num(x,1)+"%";}, dir:"high"},
+    {label:"Setup payback", get:function(m){return m.payback;}, fmt:function(x){return x===null?"Never":num(x,1)+" mo";}, dir:"low"},
+
+    {sec:"Viability"},
+    {label:"Volume modelled", get:function(m){return m.vol;}, fmt:function(x){return num(x,0)+"/mo";}, dir:"none"},
+    {label:"Break-even volume", get:function(m){return m.breakeven;}, fmt:function(x){return x===null?"Never":num(x,0)+"/mo";}, dir:"low"},
+    {label:"Headroom vs break-even", get:function(m){return m.headroom;}, fmt:function(x){return x===null?"—":(x>=0?"+":"")+num(Math.round(x),0);}, dir:"high"},
+    {label:"Fixed / step cost base", get:function(m){return m.stepFixed;}, fmt:function(x){return money(x)+"/mo";}, dir:"low"},
+    {label:"Setup capital", get:function(m){return m.capital;}, fmt:function(x){return money(x);}, dir:"low"},
+
+    {sec:"Unit economics"},
+    {label:"Revenue per mattress", get:function(m){return m.revPerMatt;}, fmt:function(x){return money(x,2);}, dir:"high"},
+    {label:"Cost per mattress", get:function(m){return m.costPerMatt;}, fmt:function(x){return money(x,2);}, dir:"low"},
+    {label:"Margin per mattress", get:function(m){return m.marginPerMatt;}, fmt:function(x){return money(x,2);}, dir:"high"},
+
+    {sec:"Cost blocks per mattress"},
+    {label:"Winning the work", get:function(m){return m.acqPerMatt;}, fmt:function(x){return money(x,2);}, dir:"low"},
+    {label:"Vehicles & fleet", get:function(m){return m.vehPerMatt;}, fmt:function(x){return money(x,2);}, dir:"low"},
+    {label:"People", get:function(m){return m.peoplePerMatt;}, fmt:function(x){return money(x,2);}, dir:"low"},
+    {label:"Warehouse & facility", get:function(m){return m.vol>0?m.facility/m.vol:null;}, fmt:function(x){return money(x,2);}, dir:"low"},
+    {label:"Disposal & freight", get:function(m){return m.vol>0?(m.disposalVar+m.freightVar)/m.vol:null;}, fmt:function(x){return money(x,2);}, dir:"low"},
+    {label:"Net material recovery", get:function(m){return m.matNetPerMatt;}, fmt:function(x){return money(x,2);}, dir:"high"},
+
+    {sec:"Operating shape"},
+    {label:"Mattresses per day", get:function(m){return m.perDay;}, fmt:function(x){return num(x,1);}, dir:"none"},
+    {label:"Trucks", get:function(m){return m.trucks;}, fmt:function(x){return num(x,0);}, dir:"none"},
+    {label:"Fleet utilisation", get:function(m){return m.truckUtil;}, fmt:function(x){return x===null?"—":num(x,0)+"%";}, dir:"high"},
+    {label:"Total headcount", get:function(m){return m.totalHeads;}, fmt:function(x){return num(x,0);}, dir:"low"},
+    {label:"Drivers", get:function(m){return m.drivers;}, fmt:function(x){return num(x,0);}, dir:"none"},
+    {label:"Offsiders", get:function(m){return m.offsiders;}, fmt:function(x){return num(x,0);}, dir:"none"},
+    {label:"Dedicated dismantlers", get:function(m){return m.disHeads;}, fmt:function(x){return num(x,0);}, dir:"none"},
+    {label:"Crew hours redirected to yard", get:function(m){return m.dualHours;}, fmt:function(x){return num(Math.round(x),0)+" hrs";}, dir:"high"},
+    {label:"Dedicated dismantler utilisation", get:function(m){return m.disUtil;}, fmt:function(x){return x===null?"—":num(x,0)+"%";}, dir:"high"},
+    {label:"Contract share of volume", get:function(m){return m.pctContract;}, fmt:function(x){return num(x,0)+"%";}, dir:"none"}
+  ];
+
+  function buildModel(inputs){
+    var m = compute(inputs);
+    var be = findBreakeven(inputs);
+    m.breakeven = be;
+    m.headroom = be === null ? null : m.vol - be;
+    return m;
+  }
+
+  function addScenario(){
+    var v = readInputs();
+    var m = buildModel(v);
+    var label = ($("scenLabel").value || v.state).trim();
+    var base = label, i = 2;
+    while (scenarios.some(function(s){ return s.label === label; })) { label = base + " (" + i + ")"; i++; }
+    scenarios.push({label:label, inputs:v, model:m});
+    $("scenLabel").value = "";
+    renderCompare();
+    var msg = $("savedMsg");
+    msg.textContent = "Saved “" + label + "” — " + scenarios.length + " state" + (scenarios.length===1?"":"s") + " in the comparison.";
+    msg.style.display = "block";
+    clearTimeout(addScenario._t);
+    addScenario._t = setTimeout(function(){ msg.style.display = "none"; }, 3500);
+  }
+
+  function loadScenario(idx){
+    var s = scenarios[idx];
+    if (!s) return;
+    IDS.forEach(function(id){ if (s.inputs[id] !== undefined) $(id).value = s.inputs[id]; });
+    $("stateName").value = s.inputs.state;
+    setMode("trk", s.inputs.trkMode);
+    setMode("dis", s.inputs.disMode);
+    setMode("pay", s.inputs.payMode);
+    setMode("rent", s.inputs.rentMode);
+    setMode("dual", s.inputs.dualMode || "off");
+    $("scenLabel").value = s.label;
+    calc();
+    showTab("model");
+    window.scrollTo(0, 0);
+  }
+
+  function removeScenario(idx){ scenarios.splice(idx, 1); renderCompare(); }
+
+  function renderCompare(){
+    $("cmpCount").textContent = scenarios.length;
+    var has = scenarios.length > 0;
+    $("cmpEmpty").style.display = has ? "none" : "block";
+    $("cmpContent").style.display = has ? "block" : "none";
+    if (!has) return;
+
+    var head = '<thead><tr><th>Metric</th>';
+    scenarios.forEach(function(s, i){
+      head += '<th><div class="cmp-head"><span class="nm">'+esc(s.label)+'</span>'+
+              '<span style="font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0">'+esc(s.model.state)+'</span>'+
+              '<span class="acts"><button class="btn ghost sm" data-load="'+i+'">Load</button>'+
+              '<button class="btn ghost sm" data-del="'+i+'">✕</button></span></div></th>';
+    });
+    head += '</tr></thead><tbody>';
+
+    var body = "";
+    METRICS.forEach(function(mt){
+      if (mt.sec){
+        body += '<tr class="sec"><td colspan="'+(scenarios.length+1)+'">'+esc(mt.sec)+'</td></tr>';
+        return;
+      }
+      var vals = scenarios.map(function(s){ return mt.get(s.model); });
+      var bestIdx = -1;
+      if (mt.dir !== "none" && scenarios.length > 1){
+        var cmpVals = vals.map(function(x){
+          if (x === null || x === undefined || !isFinite(x)) return mt.dir === "high" ? -Infinity : Infinity;
+          return x;
+        });
+        var best = mt.dir === "high" ? Math.max.apply(null, cmpVals) : Math.min.apply(null, cmpVals);
+        if (isFinite(best)){
+          var winners = cmpVals.filter(function(x){ return x === best; }).length;
+          if (winners < cmpVals.length) bestIdx = cmpVals.indexOf(best);
+        }
+      }
+      body += '<tr><td>'+esc(mt.label)+'</td>';
+      vals.forEach(function(x, i){
+        var cls = i === bestIdx ? ' class="best"'
+          : (x !== null && x !== undefined && isFinite(x) && x < 0 && mt.dir === "high" ? ' class="worst"' : '');
+        body += '<td'+cls+'><b>'+mt.fmt(x)+'</b></td>';
+      });
+      body += '</tr>';
+    });
+    $("cmpTable").innerHTML = head + body + '</tbody>';
+
+    Array.prototype.forEach.call($("cmpTable").querySelectorAll("[data-load]"), function(b){
+      b.addEventListener("click", function(){ loadScenario(parseInt(b.getAttribute("data-load"), 10)); });
+    });
+    Array.prototype.forEach.call($("cmpTable").querySelectorAll("[data-del]"), function(b){
+      b.addEventListener("click", function(){ removeScenario(parseInt(b.getAttribute("data-del"), 10)); });
+    });
+
+    var profits = scenarios.map(function(s){ return s.model.profit; });
+    var maxAbs = Math.max.apply(null, profits.map(Math.abs).concat([1]));
+    var ph = "";
+    scenarios.forEach(function(s){
+      var p = s.model.profit;
+      var w = (Math.abs(p) / maxAbs) * 50;
+      var left = p >= 0 ? 50 : 50 - w;
+      ph += '<div class="cbar"><div class="t"><span>'+esc(s.label)+'</span><b style="color:'+(p>=0?"var(--green)":"var(--red)")+'">'+money(p)+'</b></div>'+
+            '<div class="ctrack"><div class="czero" style="left:50%"></div>'+
+            '<div class="cfill'+(p<0?" neg":"")+'" style="left:'+left+'%;width:'+w+'%"></div></div></div>';
+    });
+    ph += '<div class="legend"><span>Centre line is break-even. Bars scale to the largest result.</span></div>';
+    $("cmpProfitBars").innerHTML = ph;
+
+    var maxUnit = Math.max.apply(null, scenarios.map(function(s){
+      return Math.max(s.model.revPerMatt || 0, s.model.costPerMatt || 0);
+    }).concat([1]));
+    var uh = "";
+    scenarios.forEach(function(s){
+      var r = s.model.revPerMatt || 0, c = s.model.costPerMatt || 0, marg = s.model.marginPerMatt;
+      uh += '<div class="cbar"><div class="t"><span>'+esc(s.label)+'</span>'+
+            '<b style="color:'+((marg||0)>=0?"var(--green)":"var(--red)")+'">'+money(marg,2)+' margin</b></div>'+
+            '<div class="track" style="height:10px;margin-bottom:3px"><div class="fill rev" style="width:'+Math.min(100,(r/maxUnit)*100)+'%"></div></div>'+
+            '<div class="track" style="height:10px"><div class="fill" style="width:'+Math.min(100,(c/maxUnit)*100)+'%;background:'+((marg||0)>=0?"#0a8f0a":"var(--red)")+'"></div></div></div>';
+    });
+    uh += '<div class="legend"><span><i style="background:#fff"></i>Revenue / mattress</span><span><i style="background:#0a8f0a"></i>Cost / mattress</span></div>';
+    $("cmpUnitBars").innerHTML = uh;
+
+    var viable = scenarios.filter(function(s){ return s.model.profit > 0; });
+    var vtxt;
+    if (viable.length === 0){
+      vtxt = '<span style="color:var(--red);font-weight:800">None of the '+scenarios.length+' saved states turn a profit at the volume modelled.</span> '+
+             '<span style="color:var(--muted)">The question isn\'t which state to pick — it\'s what has to change before any of them work.</span>';
+    } else {
+      var best = viable.slice().sort(function(a,b){
+        var pa = a.model.payback === null ? Infinity : a.model.payback;
+        var pb = b.model.payback === null ? Infinity : b.model.payback;
+        return pa - pb;
+      })[0];
+      vtxt = '<b style="color:var(--green)">'+esc(best.label)+'</b> pays back fastest at <b>'+num(best.model.payback,1)+' months</b>, '+
+             (best.model.headroom !== null && best.model.headroom >= 0
+               ? 'with <b>'+num(Math.round(best.model.headroom),0)+'</b> mattresses/month of headroom above break-even. '
+               : 'but with no headroom above break-even. ') +
+             '<span style="color:var(--muted)">'+viable.length+' of '+scenarios.length+' saved states are profitable at the volume modelled.</span>';
+    }
+    $("cmpVerdict").innerHTML = vtxt;
+  }
+
+  // ---------- tabs ----------
+  function showTab(which){
+    var isModel = which === "model";
+    $("viewModel").style.display = isModel ? "block" : "none";
+    $("viewCompare").style.display = isModel ? "none" : "block";
+    $("tabBtnModel").classList.toggle("on", isModel);
+    $("tabBtnCompare").classList.toggle("on", !isModel);
+  }
+  $("tabBtnModel").addEventListener("click", function(){ showTab("model"); });
+  $("tabBtnCompare").addEventListener("click", function(){ showTab("compare"); });
+
+  // ---------- toggles ----------
+  var TOGGLES = {
+    trk: {on:"trkAuto", off:"trkManual", a:"auto", b:"manual"},
+    dis: {on:"disAuto", off:"disManual", a:"auto", b:"manual"},
+    pay: {on:"payRostered", off:"payCasual", a:"rostered", b:"casual"},
+    rent:{on:"rentMo", off:"rentSqm", a:"mo", b:"sqm"},
+    dual:{on:"dualOn", off:"dualOff", a:"on", b:"off"}
+  };
+  function setMode(key, val){
+    var t = TOGGLES[key];
+    if (!t || !val) return;
+    modes[key] = val;
+    $(t.on).classList.toggle("on", val === t.a);
+    $(t.off).classList.toggle("on", val === t.b);
+    if (key === "trk") $("vehicles").disabled = val === "auto";
+    if (key === "dis") $("dismantlers").disabled = val === "auto";
+    if (key === "rent"){
+      $("rowRentMo").style.display = val === "mo" ? "flex" : "none";
+      $("rowRentSqm").style.display = val === "sqm" ? "flex" : "none";
+      $("rowRateSqm").style.display = val === "sqm" ? "flex" : "none";
+    }
+  }
+  Object.keys(TOGGLES).forEach(function(key){
+    var t = TOGGLES[key];
+    $(t.on).addEventListener("click", function(){ setMode(key, t.a); calc(); });
+    $(t.off).addEventListener("click", function(){ setMode(key, t.b); calc(); });
+  });
+
+  // ---------- cards ----------
+  Array.prototype.forEach.call(document.querySelectorAll(".card > h2"), function(h){
+    h.addEventListener("click", function(){ h.parentNode.classList.toggle("collapsed"); });
+  });
+  $("expandAll").addEventListener("click", function(){
+    Array.prototype.forEach.call($("viewModel").querySelectorAll(".card"), function(c){ c.classList.remove("collapsed"); });
+  });
+  $("collapseAll").addEventListener("click", function(){
+    Array.prototype.forEach.call($("viewModel").querySelectorAll(".inputs .card"), function(c){ c.classList.add("collapsed"); });
+  });
+
+  // ---------- buttons ----------
+  $("addBtn").addEventListener("click", addScenario);
+  $("clearBtn").addEventListener("click", function(){ scenarios = []; renderCompare(); });
+
+  $("exportBtn").addEventListener("click", function(){
+    var payload = {tool:"junk-mattress-state-calculator", version:3,
+      scenarios: scenarios.map(function(s){ return {label:s.label, inputs:s.inputs}; })};
+    var blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "junk-state-comparison.json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 500);
+  });
+
+  $("importBtn").addEventListener("click", function(){ $("importFile").click(); });
+  $("importFile").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try{
+        var data = JSON.parse(r.result);
+        var list = data && data.scenarios;
+        if (!list || !list.length) throw new Error("no scenarios");
+        list.forEach(function(s){
+          if (!s.inputs) return;
+          var label = s.label || s.inputs.state || "Imported";
+          var base = label, i = 2;
+          while (scenarios.some(function(x){ return x.label === label; })) { label = base + " (" + i + ")"; i++; }
+          scenarios.push({label:label, inputs:s.inputs, model:buildModel(s.inputs)});
+        });
+        renderCompare(); showTab("compare");
+      } catch(err){
+        renderCompare();
+        $("cmpVerdict").innerHTML = '<span style="color:var(--red)">That file couldn\'t be read — it needs to be a comparison file exported from this calculator.</span>';
+      }
+      $("importFile").value = "";
+    };
+    r.readAsText(f);
+  });
+
+  $("resetBtn").addEventListener("click", function(){
+    IDS.forEach(function(i){ $(i).value = defaults[i]; });
+    setMode("trk","auto"); setMode("dis","auto"); setMode("pay","rostered");
+    setMode("rent","mo"); setMode("dual","on");
+    calc();
+  });
+
+  $("copyBtn").addEventListener("click", function(){
+    var m = current.m, be = current.be;
+    var txt = "JUNK — Mattress recycling, " + m.state + "\n" +
+      "Volume: " + num(m.vol,0) + " mattresses/month (" + num(m.perDay,1) + "/day)\n" +
+      "Revenue: " + money(m.revenue) + "/mo (" + money(m.revPerMatt,2) + "/mattress)\n" +
+      "Cost: " + money(m.totalCost) + "/mo (" + money(m.costPerMatt,2) + "/mattress)\n" +
+      "  Winning the work " + money(m.acqTotal) + " · Fleet " + money(m.vehTotal) +
+      " · People " + money(m.peopleTotal) + " · Facility " + money(m.facility) + "\n" +
+      "Operation: " + m.trucks + " truck(s), " + m.totalHeads + " people (" +
+        m.drivers + " driver, " + m.offsiders + " offsider, " + m.disHeads + " dismantler" +
+        (m.dualOn && m.dualHours > 0.01 ? ", crew double-hatting" : "") + ")\n" +
+      "Monthly profit: " + money(m.profit) + " (" + num(m.marginPct,1) + "%)\n" +
+      "Break-even: " + (be === null ? "not reachable" : num(be,0) + " mattresses/month") + "\n" +
+      "Setup capital: " + money(m.capital) + "\n" +
+      "Payback: " + (m.payback===null ? "n/a" : num(m.payback,1) + " months") + "\n" +
+      "(Figures are assumptions unless confirmed per state.)";
+    var ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta);
+    var b = $("copyBtn"); var o = b.textContent; b.textContent = "Copied";
+    setTimeout(function(){ b.textContent = o; }, 1400);
+  });
+
+  // ---------- wire up ----------
+  IDS.forEach(function(i){ $(i).addEventListener("input", calc); });
+  $("stateName").addEventListener("change", calc);
+  $("volSlider").addEventListener("input", function(){ $("volume").value = $("volSlider").value; calc(); });
+
+  window.__JUNK__ = {
+    addScenario: addScenario,
+    getScenarios: function(){ return scenarios; },
+    compute: compute,
+    findBreakeven: findBreakeven,
+    readInputs: readInputs,
+    showTab: showTab
+  };
+
+  calc();
+  renderCompare();
+})();
+</script>
+</body>
+</html>
