@@ -3,7 +3,7 @@
 An interactive model for working out what it would cost to stand up a mattress collection
 and recycling operation in a new state, and whether that state would actually make money.
 
-**Live:** https://bigdigitalaus.github.io/junk-mattress-state-calculator/
+**Live:** https://rdodeployme.github.io/junk-mattress-state-calculator/
 
 Single self-contained HTML file. No build step, no dependencies, no server — open
 `index.html` in any browser and it runs.
